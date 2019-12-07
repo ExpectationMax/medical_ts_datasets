@@ -1,0 +1,6 @@
+http://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt?download 79219 2613ea60ccda29f87571a7d6b09ad130858a8ccd66325bd073365925026883c2
+http://physionet.org/files/challenge-2012/1.0.0/Outcomes-b.txt?download 79149 1305f29734da374a809483229a99f33a9230aa8d4fa74b1a2d6ad788136423d5
+http://physionet.org/files/challenge-2012/1.0.0/Outcomes-c.txt?download 79191 0b32dcb7753c0f18f2f5fde498a28618b8879c5e527ce0dae8ad120dd7e205c9
+http://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz 6632372 8cb250f179cd0952b4b9ebcf8954b63d70383131670fac1cfee13deaa13ca920
+http://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz 6652690 b1637a2a423a8e76f8f087896cfc5fdf28f88519e1f4e874fbda69b2a64dac30
+http://physionet.org/files/challenge-2012/1.0.0/set-c.tar.gz 6600293 a4a56b95bcee4d50a3874fe298bf2998f2ed0dd98a676579573dc10419329ee1
