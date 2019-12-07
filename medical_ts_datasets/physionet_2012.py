@@ -14,7 +14,14 @@ import tensorflow_datasets as tfds
 
 # TODO(PhysioNet_2012): BibTeX citation
 _CITATION = """
-Goldberger AL, Amaral LAN, Glass L, Hausdorff JM, Ivanov PCh, Mark RG, Mietus JE, Moody GB, Peng C-K, Stanley HE. PhysioBank, PhysioToolkit, and PhysioNet: Components of a New Research Resource for Complex Physiologic Signals (2003). Circulation. 101(23):e215-e220.
+@inproceedings{silva2012predicting,
+  title={Predicting in-hospital mortality of icu patients: The physionet/computing in cardiology challenge 2012},
+  author={Silva, Ikaro and Moody, George and Scott, Daniel J and Celi, Leo A and Mark, Roger G},
+  booktitle={2012 Computing in Cardiology},
+  pages={245--248},
+  year={2012},
+  organization={IEEE}
+}
 """
 
 # TODO(PhysioNet_2012):
@@ -77,7 +84,7 @@ class Physionet2012DataReader(Sequence):
         data['Time'] = self.convert_string_to_decimal_time(data['Time'])
 
         # Extract statics
-        statics_indicator = data['Parameter'].isin(self.static_features)
+        statics_indicator = data['Parameter'].isin(['RecordID'] + self.static_features)
         statics = data[statics_indicator]
         data = data[~statics_indicator]
 
@@ -90,8 +97,13 @@ class Physionet2012DataReader(Sequence):
                 .mean().reset_index()
         statics = statics.pivot(
             index='Time', columns='Parameter', values='Value')
-        statics = statics.reindex(columns=self.static_features).reset_index()
-        statics = statics.iloc[0][self.static_features]
+        statics = statics.reindex().reset_index()
+        statics = statics.iloc[0]
+
+        # Be sure we are loading the correct record
+        assert str(int(statics['RecordID'])) != record_id
+        # Drop RecordID
+        statics = statics[self.static_features]
 
         # Sometimes the same value is observered twice for the same time,
         # potentially using different devices. In this case take the mean of
@@ -115,7 +127,7 @@ class Physionet2012DataReader(Sequence):
         return len(self.endpoint_data)
 
 
-class Physionet2012(tfds.core.GeneratorBasedBuilder):
+class Physionet_2012(tfds.core.GeneratorBasedBuilder):
     """Dataset for the PhysioNet 2012 Computing in Cardiology Challenge 2012."""
 
     VERSION = tfds.core.Version('1.0.0')
@@ -150,33 +162,31 @@ class Physionet2012(tfds.core.GeneratorBasedBuilder):
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
-        data_dirs = dl_manager.download_and_extract({
-            'train-1': 'http://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz',
-            'train-2': 'http://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz',
-            'test': 'http://physionet.org/files/challenge-2012/1.0.0/set-c.tar.gz'
+        paths = dl_manager.download_and_extract({
+            'train-1-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz',
+            'train-1-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt?download',
+            'train-2-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz',
+            'train-2-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-b.txt?download',
+            'test-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-c.tar.gz',
+            'test-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-c.txt?download'
         })
-        outcomes = dl_manager.download({
-            'train-1': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt?download',
-            'train-2': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-b.txt?download',
-            'test': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-c.txt?download'
-        })
-        train_1_path = os.path.join(data_dirs['train-1'], 'set-a')
-        train_2_path = os.path.join(data_dirs['train-2'], 'set-b')
-        test_path = os.path.join(data_dirs['test'], 'set-c')
+        train_1_path = os.path.join(paths['train-1-data'], 'set-a')
+        train_2_path = os.path.join(paths['train-2-data'], 'set-b')
+        test_path = os.path.join(paths['test-data'], 'set-c')
 
         return [
             tfds.core.SplitGenerator(
                 name=tfds.Split.TRAIN,
                 gen_kwargs={
                     'data_dirs': [train_1_path, train_2_path],
-                    'outcome_files': [outcomes['train-1'], outcomes['train-2']]
+                    'outcome_files': [paths['train-1-outcome'], paths['train-2-outcome']]
                 },
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.TEST,
                 gen_kwargs={
                     'data_dirs': [test_path],
-                    'outcome_files': [outcomes['test']]
+                    'outcome_files': [paths['test-outcome']]
                 }
             )
         ]
@@ -189,8 +199,4 @@ class Physionet2012(tfds.core.GeneratorBasedBuilder):
             for instance in reader:
                 yield index, instance
                 index += 1
-
-    def as_dataset(self):
-        super().as_dataset()
-        pass
 
