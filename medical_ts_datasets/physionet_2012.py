@@ -12,7 +12,6 @@ import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-# TODO(PhysioNet_2012): BibTeX citation
 _CITATION = """
 @inproceedings{silva2012predicting,
   title={Predicting in-hospital mortality of icu patients: The physionet/computing in cardiology challenge 2012},
@@ -24,13 +23,13 @@ _CITATION = """
 }
 """
 
-# TODO(PhysioNet_2012):
 _DESCRIPTION = """
 The PhysioNet Computing in Cardiology Challenge 2012.
 """
 
 
 class Physionet2012DataReader(Sequence):
+    """Reader class for physionet 2012 dataset."""
     static_features = [
         'Age', 'Gender', 'Height', 'ICUType', 'Weight'
     ]
@@ -47,7 +46,7 @@ class Physionet2012DataReader(Sequence):
         self.data_path = data_path
         self.endpoint_data = pd.read_csv(endpoint_file, header=0, sep=',')
 
-    def convert_string_to_decimal_time(self, values):
+    def _convert_string_to_decimal_time(self, values):
         return values.str.split(':').apply(
             lambda a: float(a[0]) + float(a[1])/60
         )
@@ -61,7 +60,7 @@ class Physionet2012DataReader(Sequence):
         del targets['RecordID']
 
         # Read data
-        statics, timeseries = self.read_file(str(record_id))
+        statics, timeseries = self._read_file(str(record_id))
         time = timeseries['Time']
         values = timeseries[self.ts_features]
 
@@ -75,13 +74,13 @@ class Physionet2012DataReader(Sequence):
             }
         }
 
-    def read_file(self, record_id):
+    def _read_file(self, record_id):
         filename = os.path.join(self.data_path, record_id + '.txt')
         with tf.io.gfile.GFile(filename, 'r') as f:
             data = pd.read_csv(f, sep=',', header=0)
 
         # Convert time to hours
-        data['Time'] = self.convert_string_to_decimal_time(data['Time'])
+        data['Time'] = self._convert_string_to_decimal_time(data['Time'])
 
         # Extract statics
         statics_indicator = data['Parameter'].isin(['RecordID'] + self.static_features)
@@ -101,7 +100,7 @@ class Physionet2012DataReader(Sequence):
         statics = statics.iloc[0]
 
         # Be sure we are loading the correct record
-        assert str(int(statics['RecordID'])) != record_id
+        assert str(int(statics['RecordID'])) == record_id
         # Drop RecordID
         statics = statics[self.static_features]
 
@@ -127,7 +126,7 @@ class Physionet2012DataReader(Sequence):
         return len(self.endpoint_data)
 
 
-class Physionet_2012(tfds.core.GeneratorBasedBuilder):
+class Physionet2012(tfds.core.GeneratorBasedBuilder):
     """Dataset for the PhysioNet 2012 Computing in Cardiology Challenge 2012."""
 
     VERSION = tfds.core.Version('1.0.0')

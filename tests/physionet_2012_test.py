@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 
 from tensorflow_datasets import testing
-from medical_ts_datasets.physionet_2012 import Physionet_2012
+from medical_ts_datasets.physionet_2012 import Physionet2012
 
 from .utils import FAKE_DATA_DIR
 
@@ -15,7 +15,7 @@ from .utils import FAKE_DATA_DIR
 class Physionet2012Test(testing.DatasetBuilderTestCase):
     """Test Physionet 2012 dataset."""
 
-    DATASET_CLASS = Physionet_2012
+    DATASET_CLASS = Physionet2012
     EXAMPLE_DIR = os.path.join(FAKE_DATA_DIR, 'physionet_2012')
     SPLITS = {
         "train": 4,
