@@ -1,4 +1,4 @@
-"""TODO(PhysioNet_2012): Add a description here."""
+"""Test the physionet 2012 dataset."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -13,17 +13,14 @@ from .utils import FAKE_DATA_DIR
 
 
 class Physionet2012Test(testing.DatasetBuilderTestCase):
+    """Test Physionet 2012 dataset."""
+
     DATASET_CLASS = Physionet_2012
     EXAMPLE_DIR = os.path.join(FAKE_DATA_DIR, 'physionet_2012')
     SPLITS = {
-        "train": 4,  # Number of fake train example
-        "test": 2,  # Number of fake test example
+        "train": 4,
+        "test": 2
     }
-
-    # If you are calling `download/download_and_extract` with a dict, like:
-    #   dl_manager.download({'some_key': 'http://a.org/out.txt', ...})
-    # then the tests needs to provide the fake output paths relative to the
-    # fake data directory
     DL_EXTRACT_RESULT = {
         'train-1-data': '',
         'train-1-outcome': 'Outcomes-a.txt',
@@ -35,5 +32,4 @@ class Physionet2012Test(testing.DatasetBuilderTestCase):
 
 
 if __name__ == "__main__":
-  testing.test_main()
-
+    testing.test_main()
