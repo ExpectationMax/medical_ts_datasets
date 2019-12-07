@@ -1,4 +1,4 @@
-"""TODO(PhysioNet_2012): Add a description here."""
+"""Module containing the PhysioNet/computing in cardidiology challenge 2012."""
 
 from __future__ import absolute_import
 from __future__ import division
