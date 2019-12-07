@@ -14,8 +14,10 @@ import tensorflow_datasets as tfds
 
 _CITATION = """
 @inproceedings{silva2012predicting,
-  title={Predicting in-hospital mortality of icu patients: The physionet/computing in cardiology challenge 2012},
-  author={Silva, Ikaro and Moody, George and Scott, Daniel J and Celi, Leo A and Mark, Roger G},
+  title={Predicting in-hospital mortality of icu patients:
+         The physionet/computing in cardiology challenge 2012},
+  author={Silva, Ikaro and Moody, George and Scott, Daniel J and Celi, Leo A
+          and Mark, Roger G},
   booktitle={2012 Computing in Cardiology},
   pages={245--248},
   year={2012},
@@ -24,12 +26,13 @@ _CITATION = """
 """
 
 _DESCRIPTION = """
-The PhysioNet Computing in Cardiology Challenge 2012.
+The PhysioNet/Computing in Cardiology Challenge 2012.
 """
 
 
 class Physionet2012DataReader(Sequence):
     """Reader class for physionet 2012 dataset."""
+
     static_features = [
         'Age', 'Gender', 'Height', 'ICUType', 'Weight'
     ]
@@ -43,6 +46,14 @@ class Physionet2012DataReader(Sequence):
     ]
 
     def __init__(self, data_path, endpoint_file):
+        """Load instances from the Physionet 2012 challenge.
+
+        Args:
+            data_path: Path contiaing the patient records.
+            endpoint_file: File containing the endpoint defentions for patient
+                           records.
+
+        """
         self.data_path = data_path
         self.endpoint_data = pd.read_csv(endpoint_file, header=0, sep=',')
 
@@ -52,6 +63,7 @@ class Physionet2012DataReader(Sequence):
         )
 
     def __getitem__(self, index):
+        """Get instance at position index of endpoint file."""
         example_row = self.endpoint_data.iloc[index, :]
 
         # Extract targets and record id
@@ -83,7 +95,8 @@ class Physionet2012DataReader(Sequence):
         data['Time'] = self._convert_string_to_decimal_time(data['Time'])
 
         # Extract statics
-        statics_indicator = data['Parameter'].isin(['RecordID'] + self.static_features)
+        statics_indicator = data['Parameter'].isin(
+            ['RecordID'] + self.static_features)
         statics = data[statics_indicator]
         data = data[~statics_indicator]
 
@@ -123,11 +136,12 @@ class Physionet2012DataReader(Sequence):
         return statics, time_series
 
     def __len__(self):
+        """Return number of instances in the dataset."""
         return len(self.endpoint_data)
 
 
 class Physionet2012(tfds.core.GeneratorBasedBuilder):
-    """Dataset for the PhysioNet 2012 Computing in Cardiology Challenge 2012."""
+    """Dataset of the PhysioNet/Computing in Cardiology Challenge 2012."""
 
     VERSION = tfds.core.Version('1.0.0')
 
@@ -140,19 +154,25 @@ class Physionet2012(tfds.core.GeneratorBasedBuilder):
             description=_DESCRIPTION,
             # tfds.features.FeatureConnectors
             features=tfds.features.FeaturesDict({
-                'statics': tfds.features.Tensor(shape=(n_statics,), dtype=tf.float32),
-                'time': tfds.features.Tensor(shape=(None,), dtype=tf.float32),
-                'values': tfds.features.Tensor(shape=(None, n_ts), dtype=tf.float32),
+                'statics':
+                    tfds.features.Tensor(shape=(n_statics,), dtype=tf.float32),
+                'time':
+                    tfds.features.Tensor(shape=(None,), dtype=tf.float32),
+                'values':
+                    tfds.features.Tensor(shape=(None, n_ts), dtype=tf.float32),
                 'targets': {
-                    'In-hospital_death': tfds.features.ClassLabel(num_classes=2),
-                    'SAPS-I': tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
-                    'SOFA': tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
-                    'Length_of_stay': tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
-                    'Survival': tfds.features.Tensor(shape=tuple(), dtype=tf.float32)
-                },
-                'metadata': {
-                    'RecordID': tf.uint32
-                }
+                    'In-hospital_death':
+                        tfds.features.ClassLabel(num_classes=2),
+                    'SAPS-I':
+                        tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
+                    'SOFA':
+                        tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
+                    'Length_of_stay':
+                        tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
+                    'Survival':
+                        tfds.features.Tensor(shape=tuple(), dtype=tf.float32)
+                    },
+                'metadata': {'RecordID': tf.uint32}
             }),
             # Homepage of the dataset for documentation
             homepage='https://physionet.org/content/challenge-2012/1.0.0/',
@@ -160,14 +180,14 @@ class Physionet2012(tfds.core.GeneratorBasedBuilder):
         )
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
-        """Returns SplitGenerators."""
+        """Return SplitGenerators."""
         paths = dl_manager.download_and_extract({
-            'train-1-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz',
-            'train-1-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt?download',
-            'train-2-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz',
-            'train-2-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-b.txt?download',
-            'test-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-c.tar.gz',
-            'test-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-c.txt?download'
+            'train-1-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz',  # noqa: E501
+            'train-1-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt?download',  # noqa: E501
+            'train-2-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz',  # noqa: E501
+            'train-2-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-b.txt?download',  # noqa: E501
+            'test-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-c.tar.gz',  # noqa: E501
+            'test-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-c.txt?download'  # noqa: E501
         })
         train_1_path = os.path.join(paths['train-1-data'], 'set-a')
         train_2_path = os.path.join(paths['train-2-data'], 'set-b')
@@ -178,7 +198,8 @@ class Physionet2012(tfds.core.GeneratorBasedBuilder):
                 name=tfds.Split.TRAIN,
                 gen_kwargs={
                     'data_dirs': [train_1_path, train_2_path],
-                    'outcome_files': [paths['train-1-outcome'], paths['train-2-outcome']]
+                    'outcome_files': [
+                        paths['train-1-outcome'], paths['train-2-outcome']]
                 },
             ),
             tfds.core.SplitGenerator(
@@ -191,11 +212,10 @@ class Physionet2012(tfds.core.GeneratorBasedBuilder):
         ]
 
     def _generate_examples(self, data_dirs, outcome_files):
-        """Yields examples."""
+        """Yield examples."""
         index = 0
         for data_dir, outcome_file in zip(data_dirs, outcome_files):
             reader = Physionet2012DataReader(data_dir, outcome_file)
             for instance in reader:
                 yield index, instance
                 index += 1
-
