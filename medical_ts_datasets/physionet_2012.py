@@ -168,6 +168,7 @@ class Physionet2012(tfds.core.GeneratorBasedBuilder):
                 'Survival':
                     tfds.features.Tensor(shape=tuple(), dtype=tf.float32)
             },
+            default_target='In-hospital_death',
             demographics_names=Physionet2012DataReader.static_features,
             vitals_names=Physionet2012DataReader.ts_features,
             description=_DESCRIPTION,

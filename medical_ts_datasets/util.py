@@ -17,7 +17,7 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
     @tfds.core.api_utils.disallow_positional_args
     def __init__(self, builder, has_demographics, has_vitals,
                  has_lab_measurements, has_interventions, targets,
-                 demographics_names=None, vitals_names=None,
+                 default_target, demographics_names=None, vitals_names=None,
                  lab_measurements_names=None, interventions_names=None,
                  description=None, homepage=None, citation=None):
         """Dataset info for medical time series datasets.
@@ -45,6 +45,7 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
         self.has_vitals = has_vitals
         self.has_lab_measurements = has_lab_measurements
         self.has_intervensions = has_interventions
+        self.default_target = default_target
 
         metadata = tfds.core.MetadataDict()
         features_dict = {

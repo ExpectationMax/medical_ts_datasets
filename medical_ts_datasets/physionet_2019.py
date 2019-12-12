@@ -96,13 +96,14 @@ class Physionet2019(tfds.core.GeneratorBasedBuilder):
             has_vitals=True,
             has_lab_measurements=True,
             has_interventions=False,
-            demographics_names=Physionet2019DataReader.static_features,
-            vitals_names=Physionet2019DataReader.vital_features,
-            lab_measurements_names=Physionet2019DataReader.lab_features,
             targets={
                 'Sepsis': tfds.features.Tensor(
                     shape=(None,), dtype=tf.float32)
             },
+            default_target='Sepsis',
+            demographics_names=Physionet2019DataReader.static_features,
+            vitals_names=Physionet2019DataReader.vital_features,
+            lab_measurements_names=Physionet2019DataReader.lab_features,
             description=_DESCRIPTION,
             homepage='https://physionet.org/content/challenge-2019/1.0.0/',
             citation=_CITATION,
