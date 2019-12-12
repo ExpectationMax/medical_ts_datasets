@@ -12,6 +12,8 @@ import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from .util import MedicalTsDatasetInfo
+
 _CITATION = """
 @article{reyna2019early,
   title={Early prediction of sepsis from clinical data:
@@ -63,15 +65,17 @@ class Physionet2019DataReader(Sequence):
         time = data['ICULOS']
         sepsis_label = data['SepsisLabel']
         statics = data[self.static_features].iloc[0].values
-        data = data[self.vital_features + self.lab_features]
+        vitals = data[self.vital_features]
+        labs = data[self.lab_features]
 
         return {
-            'statics': statics.astype(self.data_dtype),
+            'demographics': statics.astype(self.data_dtype),
             'time': time.astype(self.data_dtype),
-            'values': data.astype(self.data_dtype),
+            'vitals': vitals.astype(self.data_dtype),
+            'lab_measurements': labs.astype(self.data_dtype),
             'targets': {'Sepsis': sepsis_label.astype(self.data_dtype)},
             'metadata': {
-                'RecordID': record_id
+                'patient_id': record_id
             }
         }
 
@@ -86,29 +90,20 @@ class Physionet2019(tfds.core.GeneratorBasedBuilder):
     VERSION = tfds.core.Version('1.0.0')
 
     def _info(self):
-        n_statics = len(Physionet2019DataReader.static_features)
-        n_ts = len(Physionet2019DataReader.ts_features)
-        return tfds.core.DatasetInfo(
+        return MedicalTsDatasetInfo(
             builder=self,
-            # This is the description that will appear on the datasets page.
+            has_demographics=True,
+            has_vitals=True,
+            has_lab_measurements=True,
+            has_interventions=False,
+            demographics_names=Physionet2019DataReader.static_features,
+            vitals_names=Physionet2019DataReader.vital_features,
+            lab_measurements_names=Physionet2019DataReader.lab_features,
+            targets={
+                'Sepsis': tfds.features.Tensor(
+                    shape=(None,), dtype=tf.float32)
+            },
             description=_DESCRIPTION,
-            # tfds.features.FeatureConnectors
-            features=tfds.features.FeaturesDict({
-                'statics': tfds.features.Tensor(
-                    shape=(n_statics,), dtype=tf.float32),
-                'time': tfds.features.Tensor(
-                    shape=(None,), dtype=tf.float32),
-                'values': tfds.features.Tensor(
-                    shape=(None, n_ts), dtype=tf.float32),
-                'targets': {
-                    'Sepsis': tfds.features.Tensor(
-                        shape=(None,), dtype=tf.float32)
-                },
-                'metadata': {
-                    'RecordID': tf.uint32
-                }
-            }),
-            # Homepage of the dataset for documentation
             homepage='https://physionet.org/content/challenge-2019/1.0.0/',
             citation=_CITATION,
         )

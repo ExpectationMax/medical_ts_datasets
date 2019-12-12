@@ -12,6 +12,8 @@ import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from .util import MedicalTsDatasetInfo
+
 _CITATION = """
 @inproceedings{silva2012predicting,
   title={Predicting in-hospital mortality of icu patients:
@@ -77,12 +79,12 @@ class Physionet2012DataReader(Sequence):
         values = timeseries[self.ts_features]
 
         return {
-            'statics': statics,
+            'demographics': statics,
             'time': time,
-            'values': values,
+            'vitals': values,
             'targets': targets,
             'metadata': {
-                'RecordID': int(record_id)
+                'patient_id': int(record_id)
             }
         }
 
@@ -146,37 +148,31 @@ class Physionet2012(tfds.core.GeneratorBasedBuilder):
     VERSION = tfds.core.Version('1.0.0')
 
     def _info(self):
-        n_statics = len(Physionet2012DataReader.static_features)
-        n_ts = len(Physionet2012DataReader.ts_features)
-        return tfds.core.DatasetInfo(
+        return MedicalTsDatasetInfo(
             builder=self,
-            # This is the description that will appear on the datasets page.
+            has_demographics=True,
+            has_vitals=True,
+            # TODO: Currently we treat all measurements as vitals. Should split
+            # this.
+            has_lab_measurements=False,
+            has_interventions=False,
+            targets={
+                'In-hospital_death':
+                    tfds.features.ClassLabel(num_classes=2),
+                'SAPS-I':
+                    tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
+                'SOFA':
+                    tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
+                'Length_of_stay':
+                    tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
+                'Survival':
+                    tfds.features.Tensor(shape=tuple(), dtype=tf.float32)
+            },
+            demographics_names=Physionet2012DataReader.static_features,
+            vitals_names=Physionet2012DataReader.ts_features,
             description=_DESCRIPTION,
-            # tfds.features.FeatureConnectors
-            features=tfds.features.FeaturesDict({
-                'statics':
-                    tfds.features.Tensor(shape=(n_statics,), dtype=tf.float32),
-                'time':
-                    tfds.features.Tensor(shape=(None,), dtype=tf.float32),
-                'values':
-                    tfds.features.Tensor(shape=(None, n_ts), dtype=tf.float32),
-                'targets': {
-                    'In-hospital_death':
-                        tfds.features.ClassLabel(num_classes=2),
-                    'SAPS-I':
-                        tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
-                    'SOFA':
-                        tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
-                    'Length_of_stay':
-                        tfds.features.Tensor(shape=tuple(), dtype=tf.float32),
-                    'Survival':
-                        tfds.features.Tensor(shape=tuple(), dtype=tf.float32)
-                    },
-                'metadata': {'RecordID': tf.uint32}
-            }),
-            # Homepage of the dataset for documentation
             homepage='https://physionet.org/content/challenge-2012/1.0.0/',
-            citation=_CITATION,
+            citation=_CITATION
         )
 
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
