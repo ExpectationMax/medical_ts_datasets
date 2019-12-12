@@ -12,7 +12,7 @@ import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from .util import MedicalTsDatasetInfo
+from .util import MedicalTsDatasetBuilder, MedicalTsDatasetInfo
 
 _CITATION = """
 @article{reyna2019early,
@@ -84,7 +84,7 @@ class Physionet2019DataReader(Sequence):
         return len(self.samples)
 
 
-class Physionet2019(tfds.core.GeneratorBasedBuilder):
+class Physionet2019(MedicalTsDatasetBuilder):
     """Dataset of the PhysioNet/Computing in Cardiology Challenge 2019."""
 
     VERSION = tfds.core.Version('1.0.0')

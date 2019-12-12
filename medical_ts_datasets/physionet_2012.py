@@ -12,7 +12,7 @@ import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from .util import MedicalTsDatasetInfo
+from .util import MedicalTsDatasetBuilder, MedicalTsDatasetInfo
 
 _CITATION = """
 @inproceedings{silva2012predicting,
@@ -142,7 +142,7 @@ class Physionet2012DataReader(Sequence):
         return len(self.endpoint_data)
 
 
-class Physionet2012(tfds.core.GeneratorBasedBuilder):
+class Physionet2012(MedicalTsDatasetBuilder):
     """Dataset of the PhysioNet/Computing in Cardiology Challenge 2012."""
 
     VERSION = tfds.core.Version('1.0.0')
