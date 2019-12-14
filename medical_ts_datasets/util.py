@@ -123,9 +123,8 @@ class MedicalTsDatasetBuilder(tfds.core.GeneratorBasedBuilder):
                             del d[val]
 
                     if replace_nans:
-
-
-
+                        # TODO: Implement replacement of NaNs
+                        raise NotImplementedError()
 
                 if drop_demographics:
                     del d['demographics']
