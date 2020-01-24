@@ -77,14 +77,58 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
         features_dict['targets'] = targets
         features_dict['metadata'] = {'patient_id': self.patient_id_dtype}
         features_dict = FeaturesDict(features_dict)
+        if builder.output_raw:
+            supervised_keys=None
+        else:
+            supervised_keys=("combined", "target")
+
         super().__init__(
             builder=builder,
             description=description, homepage=homepage, citation=citation,
             features=features_dict,
-            supervised_keys=None,
+            supervised_keys=supervised_keys,
             metadata=metadata
         )
 
 
 class MedicalTsDatasetBuilder(tfds.core.GeneratorBasedBuilder):
     """Builder class for medical time series datasets."""
+
+    def __init__(self, output_raw=False, **kwargs):
+        self.output_raw = output_raw
+        super().__init__(**kwargs)
+
+    def _as_dataset(self, **kwargs):
+        """Evtl. transform categorical covariates into one-hot encoding."""
+        dataset = super()._as_dataset(**kwargs)
+        if self.output_raw:
+            return dataset
+
+        has_demographics = self.info.has_demographics
+        collect_ts = []
+        if self.has_vitals:
+            collect_ts.append('vitals')
+        if self.has_lab_measurements:
+            collect_ts.append('lab_measurements')
+        if self.has_interventions:
+            collect_ts.append('interventions')
+
+        def preprocess_output(instance):
+            if has_demographics:
+                demographics = instance['demographics']
+            else:
+                demographics = None
+
+            time = instance['time']
+            time_series = tf.concat(
+                [instance[mod_type] for mod_type in collect_ts], axis=-1)
+
+            return {
+                'combined': (demographics, time, time_series),
+                'target': instance['targets'][self.default_target]
+            }
+
+        return dataset.map(
+            preprocess_output,
+            num_parallel_calls=tf.data.experimental.AUTOTUNE
+        )

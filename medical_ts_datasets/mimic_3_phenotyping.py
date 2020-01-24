@@ -150,18 +150,14 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
     """
 
     reader = MIMICPhenotypingReader
+    has_demographics=True
+    has_vitals=True
+    has_lab_measurements=True
+    has_interventions=True
 
-    def __init__(self, convert_categorical_to_one_hot=True,
-                 get_default_target=True, **kwargs):
-        self.convert_categorical_to_one_hot = convert_categorical_to_one_hot
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def _as_dataset(self, **kwargs):
-        """Evtl. transform categorical covariates into one-hot encoding."""
-        dataset = super()._as_dataset(**kwargs)
-        def preprocess_output(instance):
-            pass
-        return dataset
 
     def _info(self):
         return MedicalTsDatasetInfo(

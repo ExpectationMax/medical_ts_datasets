@@ -47,7 +47,7 @@ class Physionet2012DataReader(Sequence):
         'Urine', 'WBC', 'pH'
     ]
 
-    def __init__(self, data_path, endpoint_file):
+    def __init__(self, data_paths, endpoint_file):
         """Load instances from the Physionet 2012 challenge.
 
         Args:
@@ -56,7 +56,7 @@ class Physionet2012DataReader(Sequence):
                            records.
 
         """
-        self.data_path = data_path
+        self.data_paths = data_paths
         self.endpoint_data = pd.read_csv(endpoint_file, header=0, sep=',')
 
     def _convert_string_to_decimal_time(self, values):
@@ -89,7 +89,14 @@ class Physionet2012DataReader(Sequence):
         }
 
     def _read_file(self, record_id):
-        filename = os.path.join(self.data_path, record_id + '.txt')
+        filename = None
+        for path in self.data_paths:
+            if tf.io.gfile.exists(path):
+                filename = os.path.join(path, record_id + '.txt')
+                break
+        if filename is None:
+            raise ValueError(f'Unable to find data for record: {record_id}.')
+
         with tf.io.gfile.GFile(filename, 'r') as f:
             data = pd.read_csv(f, sep=',', header=0)
 
@@ -146,6 +153,11 @@ class Physionet2012(MedicalTsDatasetBuilder):
     """Dataset of the PhysioNet/Computing in Cardiology Challenge 2012."""
 
     VERSION = tfds.core.Version('1.0.0')
+    has_demographics = True
+    has_vitals = True
+    has_lab_measurements = False
+    has_interventions = False
+    default_target = 'In-hospital_death'
 
     def _info(self):
         return MedicalTsDatasetInfo(
@@ -185,6 +197,9 @@ class Physionet2012(MedicalTsDatasetBuilder):
             'train-2-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-b.txt?download',  # noqa: E501
             'test-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-c.tar.gz',  # noqa: E501
             'test-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-c.txt?download'  # noqa: E501
+            'train_listfile': '',
+            'val_listfile': '',
+            'test_listfile': ''
         })
         train_1_path = os.path.join(paths['train-1-data'], 'set-a')
         train_2_path = os.path.join(paths['train-2-data'], 'set-b')
@@ -195,20 +210,26 @@ class Physionet2012(MedicalTsDatasetBuilder):
                 name=tfds.Split.TRAIN,
                 gen_kwargs={
                     'data_dirs': [train_1_path, train_2_path],
-                    'outcome_files': [
-                        paths['train-1-outcome'], paths['train-2-outcome']]
+                    'outcome_file': paths['train_listfile']
+                },
+            ),
+            tfds.core.SplitGenerator(
+                name=tfds.Split.VALIDATION,
+                gen_kwargs={
+                    'data_dirs': [train_1_path, train_2_path],
+                    'outcome_file': paths['val_listfile']
                 },
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.TEST,
                 gen_kwargs={
                     'data_dirs': [test_path],
-                    'outcome_files': [paths['test-outcome']]
+                    'outcome_file': paths['test_listfile']
                 }
             )
         ]
 
-    def _generate_examples(self, data_dirs, outcome_files):
+    def _generate_examples(self, data_dirs, outcome_file):
         """Yield examples."""
         index = 0
         for data_dir, outcome_file in zip(data_dirs, outcome_files):
