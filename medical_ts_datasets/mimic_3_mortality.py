@@ -1,12 +1,10 @@
-"""Module containing phenotyping dataset of MIMIC-III benchmarks."""
+"""Module containing mortality prediction dataset of MIMIC-III benchmarks."""
 
+from collections.abc import Sequence
 from os.path import join
 
-import numpy as np
-import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from .mimic_3_reader import MIMICReader
 from .util import MedicalTsDatasetBuilder, MedicalTsDatasetInfo
 
 _CITATION = """
@@ -38,66 +36,47 @@ _CITATION = """
 """
 
 _DESCRIPTION = """
-Phenotyping dataset of the MIMIC-III benchmarks.
+In hospital mortality prediction task of the MIMIC-III benchmarks.
 """
 
 
-class MIMICPhenotypingReader(MIMICReader):
-    """Reader for phenotyping dataset of the MIMIC-III benchmarks."""
+class MIMICMortalityReader(Sequence):
+    """Reader for mortality prediction of the MIMIC-III benchmarks."""
 
     # Blacklisted instances due to unusually many observations compared to the
     # overall distribution.
     blacklist = [
-        # Criterion for exclusion: more than 2000 distinct timepoints
-        # Train data
-        '50883_episode1_timeseries.csv', '70492_episode1_timeseries.csv',
-        '711_episode3_timeseries.csv', '24915_episode1_timeseries.csv',
-        '73129_episode2_timeseries.csv', '3932_episode1_timeseries.csv',
-        '24597_episode1_timeseries.csv', '31123_episode1_timeseries.csv',
-        '99383_episode1_timeseries.csv', '16338_episode1_timeseries.csv',
-        '48123_episode2_timeseries.csv', '1785_episode1_timeseries.csv',
-        '56854_episode1_timeseries.csv', '76151_episode2_timeseries.csv',
-        '72908_episode1_timeseries.csv', '26277_episode3_timeseries.csv',
-        '77614_episode1_timeseries.csv', '6317_episode3_timeseries.csv',
-        '82609_episode1_timeseries.csv', '79645_episode1_timeseries.csv',
-        '12613_episode1_timeseries.csv', '77617_episode1_timeseries.csv',
-        '41861_episode1_timeseries.csv', '55205_episode1_timeseries.csv',
-        '45910_episode1_timeseries.csv', '80927_episode1_timeseries.csv',
-        '49555_episode1_timeseries.csv', '19911_episode3_timeseries.csv',
-        '43459_episode1_timeseries.csv', '21280_episode2_timeseries.csv',
-        '90776_episode1_timeseries.csv', '51078_episode2_timeseries.csv',
-        '65565_episode1_timeseries.csv', '41493_episode1_timeseries.csv',
-        '10694_episode2_timeseries.csv', '54073_episode1_timeseries.csv',
-        '12831_episode2_timeseries.csv', '89223_episode1_timeseries.csv',
-        '46156_episode1_timeseries.csv', '58242_episode4_timeseries.csv',
+        # Criterion for exclusion: more than 1000 distinct timepoints
+        # In training data
+        '73129_episode2_timeseries.csv', '48123_episode2_timeseries.csv',
+        '76151_episode2_timeseries.csv', '41493_episode1_timeseries.csv',
+        '65565_episode1_timeseries.csv', '55205_episode1_timeseries.csv',
+        '41861_episode1_timeseries.csv', '58242_episode4_timeseries.csv',
+        '54073_episode1_timeseries.csv', '46156_episode1_timeseries.csv',
         '55639_episode1_timeseries.csv', '89840_episode1_timeseries.csv',
-        # Validation data
-        '67906_episode1_timeseries.csv', '59268_episode1_timeseries.csv',
-        '78251_episode1_timeseries.csv', '32476_episode1_timeseries.csv',
-        '96924_episode2_timeseries.csv', '96686_episode10_timeseries.csv',
-        '5183_episode1_timeseries.csv', '58723_episode1_timeseries.csv',
-        '78515_episode1_timeseries.csv', '40187_episode1_timeseries.csv',
-        '62239_episode2_timeseries.csv', '79337_episode1_timeseries.csv',
-        # Testing data
-        '29105_episode2_timeseries.csv', '69745_episode4_timeseries.csv',
-        '59726_episode1_timeseries.csv', '81786_episode1_timeseries.csv',
-        '12805_episode1_timeseries.csv', '6145_episode1_timeseries.csv',
-        '54353_episode2_timeseries.csv', '58854_episode1_timeseries.csv',
-        '98994_episode1_timeseries.csv', '19223_episode2_timeseries.csv',
-        '80345_episode1_timeseries.csv', '48935_episode1_timeseries.csv',
-        '48380_episode1_timeseries.csv', '70698_episode1_timeseries.csv',
-        '51177_episode1_timeseries.csv'
+        '43459_episode1_timeseries.csv', '10694_episode2_timeseries.csv',
+        '51078_episode2_timeseries.csv', '90776_episode1_timeseries.csv',
+        '89223_episode1_timeseries.csv', '12831_episode2_timeseries.csv',
+        '80536_episode1_timeseries.csv',
+        # In validation data
+        '78515_episode1_timeseries.csv', '62239_episode2_timeseries.csv',
+        '58723_episode1_timeseries.csv', '40187_episode1_timeseries.csv',
+        '79337_episode1_timeseries.csv',
+        # In testing data
+        '51177_episode1_timeseries.csv', '70698_episode1_timeseries.csv',
+        '48935_episode1_timeseries.csv', '54353_episode2_timeseries.csv',
+        '19223_episode2_timeseries.csv', '58854_episode1_timeseries.csv',
+        '80345_episode1_timeseries.csv', '48380_episode1_timeseries.csv'
     ]
 
     def __init__(self, dataset_dir, listfile):
-        """Initialize MIMIC-III phenotyping reader."""
+        """Initialize MIMIC-III mortality reader."""
         super().__init__(dataset_dir, listfile, self.blacklist)
 
     def __getitem__(self, index):
         """Get instance with index."""
         instance = self.instances.iloc[index]
-        length_of_stay = float(instance['period_length'])
-        phenotype = instance.iloc[2:].values.astype(int)
+        mortality = int(instance['y_true'])
         data_file = join(self.dataset_dir, instance['stay'])
         time, demographics, vitals, lab_measurements, intervensions = \
             self._read_data_for_instance(data_file)
@@ -110,8 +89,7 @@ class MIMICPhenotypingReader(MIMICReader):
             'lab_measurements': lab_measurements,
             'intervensions': intervensions,
             'targets': {
-                'Length_of_stay': length_of_stay,
-                'Phenotype': phenotype.astype(np.uint32)
+                'In_hospital_mortality': mortality
             },
             'metadata': {
                 'patient_id': patient_id
@@ -119,12 +97,12 @@ class MIMICPhenotypingReader(MIMICReader):
         }
 
 
-class Mimic3Phenotyping(MedicalTsDatasetBuilder):
-    """Phenotyping task dataset of the MIMIC-III benchmarks."""
+class Mimic3Mortality(MedicalTsDatasetBuilder):
+    """In hospital mortality task dataset of the MIMIC-III benchmarks."""
 
     VERSION = tfds.core.Version('1.0.0')
     MANUAL_DOWNLOAD_INSTRUCTIONS = """\
-    manual_dir should contain the file `mimic_benchmarking_phenotyping.tar.gz`\
+    manual_dir should contain the file `mimic_benchmarking_mortality.tar.gz`\
     """
 
     def _info(self):
@@ -135,19 +113,14 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
             has_lab_measurements=True,
             has_interventions=True,
             targets={
-                'Phenotype':
-                    tfds.features.Tensor(
-                        shape=(len(MIMICPhenotypingReader.phenotypes),),
-                        dtype=tf.uint32
-                    ),
-                'Length_of_stay':
-                    tfds.features.Tensor(shape=tuple(), dtype=tf.float32)
+                'In_hospital_mortality':
+                    tfds.features.ClassLabel(num_classes=2)
             },
-            default_target='Phenotype',
-            demographics_names=MIMICPhenotypingReader.demographics,
-            vitals_names=MIMICPhenotypingReader.vitals,
-            lab_measurements_names=MIMICPhenotypingReader.lab_measurements,
-            interventions_names=MIMICPhenotypingReader.interventions,
+            default_target='In_hostpital_mortality',
+            demographics_names=MIMICMortalityReader.demographics,
+            vitals_names=MIMICMortalityReader.vitals,
+            lab_measurements_names=MIMICMortalityReader.lab_measurements,
+            interventions_names=MIMICMortalityReader.interventions,
             description=_DESCRIPTION,
             homepage='https://github.com/yerevann/mimic3-benchmarks',
             citation=_CITATION
@@ -195,7 +168,7 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
     def _generate_examples(self, data_dir, listfile):
         """Yield examples."""
         index = 0
-        reader = MIMICPhenotypingReader(data_dir, listfile)
+        reader = MIMICMortalityReader(data_dir, listfile)
         for instance in reader:
             yield index, instance
             index += 1

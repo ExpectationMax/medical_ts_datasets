@@ -80,7 +80,9 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
         super().__init__(
             builder=builder,
             description=description, homepage=homepage, citation=citation,
-            features=features_dict, metadata=metadata
+            features=features_dict,
+            supervised_keys=("combined", self.default_target),
+            metadata=metadata
         )
 
 
@@ -140,8 +142,3 @@ class MedicalTsDatasetBuilder(tfds.core.GeneratorBasedBuilder):
                 batch_size, tf.compat.v1.data.get_output_shapes(dataset))
 
         return dataset
-
-
-
-
-
