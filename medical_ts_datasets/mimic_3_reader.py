@@ -20,42 +20,69 @@ class MIMICReader:
         'Glascow coma scale verbal response'
     ]
     coma_scale_eye_opening_replacements = {
-        "1 No Response": 1,
-        "None": 1,
-        "2 To pain": 2,
-        "To Pain": 2,
-        "3 To speech": 3,
-        "To Speech": 3,
-        "4 Spontaneously": 4,
-        "Spontaneously": 4,
+        "1 No Response": 0,
+        "None": 0,
+        "2 To pain": 1,
+        "To Pain": 1,
+        "3 To speech": 2,
+        "To Speech": 2,
+        "4 Spontaneously": 3,
+        "Spontaneously": 3,
     }
     coma_scale_motor_replacements = {
-        "1 No Response": 1,
-        "No response": 1,
-        "2 Abnorm extensn": 2,
-        "Abnormal extension": 2,
-        "3 Abnorm flexion": 3,
-        "Abnormal Flexion": 3,
-        "4 Flex-withdraws": 4,
-        "Flex-withdraws": 4,
-        "5 Localizes Pain": 5,
-        "Localizes Pain": 5,
-        "6 Obeys Commands": 6,
-        "Obeys Commands": 6
+        "1 No Response": 0,
+        "No response": 0,
+        "2 Abnorm extensn": 1,
+        "Abnormal extension": 1,
+        "3 Abnorm flexion": 2,
+        "Abnormal Flexion": 2,
+        "4 Flex-withdraws": 3,
+        "Flex-withdraws": 3,
+        "5 Localizes Pain": 4,
+        "Localizes Pain": 4,
+        "6 Obeys Commands": 5,
+        "Obeys Commands": 5
     }
     coma_scale_verbal_replacements = {
-        "No Response-ETT": 0,
-        "1.0 ET/Trach": 0,
-        "1 No Response": 1,
-        "No Response": 1,
-        "2 Incomp sounds": 2,
-        "Incomprehensible sounds": 2,
-        "3 Inapprop words": 3,
-        "Inappropriate Words": 3,
-        "4 Confused": 4,
-        "Confused": 4,
-        "5 Oriented": 5,
-        "Oriented": 5,
+        "No Response-ETT": 5,
+        "1.0 ET/Trach": 5,
+        "1 No Response": 0,
+        "No Response": 0,
+        "2 Incomp sounds": 1,
+        "Incomprehensible sounds": 1,
+        "3 Inapprop words": 2,
+        "Inappropriate Words": 2,
+        "4 Confused": 3,
+        "Confused": 3,
+        "5 Oriented": 4,
+        "Oriented": 4,
+    }
+
+    coma_scale_total_replacements: {
+        "3": 0,
+        "4": 1,
+        "5": 2,
+        "6": 3,
+        "7": 4,
+        "8": 5,
+        "9": 6,
+        "10": 7,
+        "11": 8,
+        "12": 9,
+        "13": 10,
+        "14": 11,
+        "15": 12,
+    }
+
+    categorical_channels = {
+        "Glascow coma scale eye opening":
+            max(coma_scale_eye_opening_replacements.values()) + 1,
+        "Glascow coma scale motor response":
+            max(coma_scale_motor_replacements.values()) +1,
+        "Glascow coma scale verbal response":
+            max(coma_scale_verbal_replacements.values()) + 1,
+        "Glascow coma scale total":
+            max(coma_scale_total_replacements.values()) + 1
     }
 
     def __init__(self, dataset_dir, listfile, blacklist=None):
@@ -95,6 +122,8 @@ class MIMICReader:
                 self.coma_scale_motor_replacements,
             "Glascow coma scale verbal response":
                 self.coma_scale_verbal_replacements
+            "Glascow coma scale total":
+                self.coma_scale_total_replacements
         }
         coma_scale_columns = list(to_replace.keys())
         coma_scales = data[coma_scale_columns]

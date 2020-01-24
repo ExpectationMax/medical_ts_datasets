@@ -89,6 +89,28 @@ class MIMICPhenotypingReader(MIMICReader):
         '51177_episode1_timeseries.csv'
     ]
 
+    phenotypes = [
+        'Acute and unspecified renal failure', 'Acute cerebrovascular disease',
+        'Acute myocardial infarction', 'Cardiac dysrhythmias',
+        'Chronic kidney disease',
+        'Chronic obstructive pulmonary disease and bronchiectasis',
+        'Complications of surgical procedures or medical care',
+        'Conduction disorders', 'Congestive heart failure; nonhypertensive',
+        'Coronary atherosclerosis and other heart disease',
+        'Diabetes mellitus with complications',
+        'Diabetes mellitus without complication',
+        'Disorders of lipid metabolism', 'Essential hypertension',
+        'Fluid and electrolyte disorders', 'Gastrointestinal hemorrhage',
+        'Hypertension with complications and secondary hypertension',
+        'Other liver diseases', 'Other lower respiratory disease',
+        'Other upper respiratory disease',
+        'Pleurisy; pneumothorax; pulmonary collapse',
+        'Pneumonia (except that caused by tuberculosis or sexually transmitted disease)',  # noqa: E501
+        'Respiratory failure; insufficiency; arrest (adult)',
+        'Septicemia (except in labor)',
+        'Shock'
+    ]
+
     def __init__(self, dataset_dir, listfile):
         """Initialize MIMIC-III phenotyping reader."""
         super().__init__(dataset_dir, listfile, self.blacklist)
@@ -126,6 +148,20 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
     MANUAL_DOWNLOAD_INSTRUCTIONS = """\
     manual_dir should contain the file `mimic_benchmarking_phenotyping.tar.gz`\
     """
+
+    reader = MIMICPhenotypingReader
+
+    def __init__(self, convert_categorical_to_one_hot=True,
+                 get_default_target=True, **kwargs):
+        self.convert_categorical_to_one_hot = convert_categorical_to_one_hot
+        super().__init__(**kwargs)
+
+    def _as_dataset(self, **kwargs):
+        """Evtl. transform categorical covariates into one-hot encoding."""
+        dataset = super()._as_dataset(**kwargs)
+        def preprocess_output(instance):
+            pass
+        return dataset
 
     def _info(self):
         return MedicalTsDatasetInfo(
