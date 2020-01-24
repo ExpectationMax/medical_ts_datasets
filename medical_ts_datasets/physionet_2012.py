@@ -14,6 +14,9 @@ import tensorflow_datasets as tfds
 
 from .util import MedicalTsDatasetBuilder, MedicalTsDatasetInfo
 
+RESOURCES = os.path.join(
+    os.path.dirname(__file__), 'resources', 'physionet2012')
+
 _CITATION = """
 @inproceedings{silva2012predicting,
   title={Predicting in-hospital mortality of icu patients:
@@ -91,8 +94,9 @@ class Physionet2012DataReader(Sequence):
     def _read_file(self, record_id):
         filename = None
         for path in self.data_paths:
-            if tf.io.gfile.exists(path):
-                filename = os.path.join(path, record_id + '.txt')
+            suggested_filename = os.path.join(path, record_id + '.txt')
+            if tf.io.gfile.exists(suggested_filename):
+                filename = suggested_filename
                 break
         if filename is None:
             raise ValueError(f'Unable to find data for record: {record_id}.')
@@ -152,7 +156,7 @@ class Physionet2012DataReader(Sequence):
 class Physionet2012(MedicalTsDatasetBuilder):
     """Dataset of the PhysioNet/Computing in Cardiology Challenge 2012."""
 
-    VERSION = tfds.core.Version('1.0.0')
+    VERSION = tfds.core.Version('1.0.1')
     has_demographics = True
     has_vitals = True
     has_lab_measurements = False
@@ -192,14 +196,11 @@ class Physionet2012(MedicalTsDatasetBuilder):
         """Return SplitGenerators."""
         paths = dl_manager.download_and_extract({
             'train-1-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz',  # noqa: E501
-            'train-1-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt?download',  # noqa: E501
+            # 'train-1-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt?download',  # noqa: E501
             'train-2-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz',  # noqa: E501
-            'train-2-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-b.txt?download',  # noqa: E501
+            # 'train-2-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-b.txt?download',  # noqa: E501
             'test-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-c.tar.gz',  # noqa: E501
-            'test-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-c.txt?download'  # noqa: E501
-            'train_listfile': '',
-            'val_listfile': '',
-            'test_listfile': ''
+            # 'test-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-c.txt?download',  # noqa: E501
         })
         train_1_path = os.path.join(paths['train-1-data'], 'set-a')
         train_2_path = os.path.join(paths['train-2-data'], 'set-b')
@@ -208,23 +209,26 @@ class Physionet2012(MedicalTsDatasetBuilder):
         return [
             tfds.core.SplitGenerator(
                 name=tfds.Split.TRAIN,
+                num_shards=64,
                 gen_kwargs={
                     'data_dirs': [train_1_path, train_2_path],
-                    'outcome_file': paths['train_listfile']
+                    'outcome_file': os.path.join(RESOURCES, 'train_listfile.csv')
                 },
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.VALIDATION,
+                num_shards=16,
                 gen_kwargs={
                     'data_dirs': [train_1_path, train_2_path],
-                    'outcome_file': paths['val_listfile']
+                    'outcome_file': os.path.join(RESOURCES, 'val_listfile.csv')
                 },
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.TEST,
+                num_shards=40,
                 gen_kwargs={
                     'data_dirs': [test_path],
-                    'outcome_file': paths['test_listfile']
+                    'outcome_file': os.path.join(RESOURCES, 'test_listfile.csv')
                 }
             )
         ]
@@ -232,8 +236,7 @@ class Physionet2012(MedicalTsDatasetBuilder):
     def _generate_examples(self, data_dirs, outcome_file):
         """Yield examples."""
         index = 0
-        for data_dir, outcome_file in zip(data_dirs, outcome_files):
-            reader = Physionet2012DataReader(data_dir, outcome_file)
-            for instance in reader:
-                yield index, instance
-                index += 1
+        reader = Physionet2012DataReader(data_dirs, outcome_file)
+        for instance in reader:
+            yield index, instance
+            index += 1

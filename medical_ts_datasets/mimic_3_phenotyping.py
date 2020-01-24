@@ -130,7 +130,7 @@ class MIMICPhenotypingReader(MIMICReader):
             'time': time,
             'vitals': vitals,
             'lab_measurements': lab_measurements,
-            'intervensions': intervensions,
+            'interventions': intervensions,
             'targets': {
                 'Length_of_stay': length_of_stay,
                 'Phenotype': phenotype.astype(np.uint32)
@@ -150,14 +150,11 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
     """
 
     reader = MIMICPhenotypingReader
-    has_demographics=True
-    has_vitals=True
-    has_lab_measurements=True
-    has_interventions=True
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
+    has_demographics = True
+    has_vitals = True
+    has_lab_measurements = True
+    has_interventions = True
+    default_target = 'Phenotype'
 
     def _info(self):
         return MedicalTsDatasetInfo(
@@ -200,7 +197,7 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
         return [
             tfds.core.SplitGenerator(
                 name=tfds.Split.TRAIN,
-                num_shards=20,
+                num_shards=290,
                 gen_kwargs={
                     'data_dir': train_dir,
                     'listfile': train_listfile
@@ -208,7 +205,7 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.VALIDATION,
-                num_shards=5,
+                num_shards=630,
                 gen_kwargs={
                     'data_dir': val_dir,
                     'listfile': val_listfile
@@ -216,7 +213,7 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.TEST,
-                num_shards=10,
+                num_shards=620,
                 gen_kwargs={
                     'data_dir': test_dir,
                     'listfile': test_listfile

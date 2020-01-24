@@ -70,17 +70,19 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
                 dtype=self.lab_measurements_dtype)
         if has_interventions:
             metadata['interventions_names'] = interventions_names
-            features_dict['intervensions'] = Tensor(
+            features_dict['interventions'] = Tensor(
                 shape=(None, len(interventions_names),),
                 dtype=self.interventions_dtype)
 
         features_dict['targets'] = targets
         features_dict['metadata'] = {'patient_id': self.patient_id_dtype}
         features_dict = FeaturesDict(features_dict)
+        # TODO: If we are supposed to return raw values, we cannot make
+        # a supervised dataset
         if builder.output_raw:
-            supervised_keys=None
+            supervised_keys = None
         else:
-            supervised_keys=("combined", "target")
+            supervised_keys = ("combined", "target")
 
         super().__init__(
             builder=builder,

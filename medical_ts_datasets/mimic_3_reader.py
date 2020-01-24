@@ -67,7 +67,7 @@ class MIMICReader:
         if blacklist is not None:
             # Remove instances which are on the blacklist
             self.instances = self.instances[
-                self.instances['stay'].isin(blacklist)
+                ~self.instances['stay'].isin(blacklist)
             ]
 
     def _read_data_for_instance(self, filename):

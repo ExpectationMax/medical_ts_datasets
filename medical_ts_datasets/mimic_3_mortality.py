@@ -1,11 +1,11 @@
 """Module containing mortality prediction dataset of MIMIC-III benchmarks."""
-
-from collections.abc import Sequence
 from os.path import join
 
 import tensorflow_datasets as tfds
 
+from .mimic_3_reader import MIMICReader
 from .util import MedicalTsDatasetBuilder, MedicalTsDatasetInfo
+
 
 _CITATION = """
 @article{Harutyunyan2019,
@@ -40,7 +40,7 @@ In hospital mortality prediction task of the MIMIC-III benchmarks.
 """
 
 
-class MIMICMortalityReader(Sequence):
+class MIMICMortalityReader(MIMICReader):
     """Reader for mortality prediction of the MIMIC-III benchmarks."""
 
     # Blacklisted instances due to unusually many observations compared to the
@@ -78,7 +78,7 @@ class MIMICMortalityReader(Sequence):
         instance = self.instances.iloc[index]
         mortality = int(instance['y_true'])
         data_file = join(self.dataset_dir, instance['stay'])
-        time, demographics, vitals, lab_measurements, intervensions = \
+        time, demographics, vitals, lab_measurements, interventions = \
             self._read_data_for_instance(data_file)
         patient_id = int(instance['stay'].split('_')[0])
 
@@ -87,7 +87,7 @@ class MIMICMortalityReader(Sequence):
             'time': time,
             'vitals': vitals,
             'lab_measurements': lab_measurements,
-            'intervensions': intervensions,
+            'interventions': interventions,
             'targets': {
                 'In_hospital_mortality': mortality
             },
@@ -104,6 +104,12 @@ class Mimic3Mortality(MedicalTsDatasetBuilder):
     MANUAL_DOWNLOAD_INSTRUCTIONS = """\
     manual_dir should contain the file `mimic_benchmarking_mortality.tar.gz`\
     """
+
+    has_demographics = True
+    has_vitals = True
+    has_lab_measurements = True
+    has_interventions = True
+    default_target = 'In_hospital_mortality'
 
     def _info(self):
         return MedicalTsDatasetInfo(
@@ -129,7 +135,7 @@ class Mimic3Mortality(MedicalTsDatasetBuilder):
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Return SplitGenerators."""
         data_file = join(
-            dl_manager.manual_dir, 'mimic_benchmarking_phenotyping.tar.gz')
+            dl_manager.manual_dir, 'mimic_benchmarking_mortality.tar.gz')
         extracted_path = dl_manager.extract(data_file)
         train_dir = join(extracted_path, 'train')
         train_listfile = join(extracted_path, 'train_listfile.csv')
@@ -141,7 +147,7 @@ class Mimic3Mortality(MedicalTsDatasetBuilder):
         return [
             tfds.core.SplitGenerator(
                 name=tfds.Split.TRAIN,
-                num_shards=20,
+                num_shards=146,
                 gen_kwargs={
                     'data_dir': train_dir,
                     'listfile': train_listfile
@@ -149,7 +155,7 @@ class Mimic3Mortality(MedicalTsDatasetBuilder):
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.VALIDATION,
-                num_shards=5,
+                num_shards=32,
                 gen_kwargs={
                     'data_dir': val_dir,
                     'listfile': val_listfile
@@ -157,7 +163,7 @@ class Mimic3Mortality(MedicalTsDatasetBuilder):
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.TEST,
-                num_shards=10,
+                num_shards=32,
                 gen_kwargs={
                     'data_dir': test_dir,
                     'listfile': test_listfile
