@@ -8,8 +8,8 @@ authors = ["Max Horn <max.horn@bsse.ethz.ch>"]
 python = "^3.6"
 pip = ">=19.0.0"
 setuptools = ">=41.0.0"
-tensorflow-datasets = {git = "https://github.com/tensorflow/datasets.git"}
-tensorflow = "=2.1.0rc0"
+tensorflow-datasets = ">=2.0.0"
+tensorflow = ">=1.15.2"
 pandas = "^0.25.3"
 
 [tool.poetry.dev-dependencies]
