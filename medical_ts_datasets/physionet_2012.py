@@ -49,6 +49,11 @@ class Physionet2012DataReader(Sequence):
         'RespRate', 'SaO2', 'SysABP', 'Temp', 'TroponinI', 'TroponinT',
         'Urine', 'WBC', 'pH'
     ]
+    # Remove instances without any timeseries
+    blacklist = [
+        140501, 150649, 140936, 143656, 141264, 145611, 142998, 147514, 142731,
+        150309, 155655, 156254
+    ]
 
     def __init__(self, data_paths, endpoint_file):
         """Load instances from the Physionet 2012 challenge.
@@ -60,7 +65,9 @@ class Physionet2012DataReader(Sequence):
 
         """
         self.data_paths = data_paths
-        self.endpoint_data = pd.read_csv(endpoint_file, header=0, sep=',')
+        endpoint_data = pd.read_csv(endpoint_file, header=0, sep=',')
+        self.endpoint_data = endpoint_data[
+            ~endpoint_data['RecordID'].isin(self.blacklist)]
 
     def _convert_string_to_decimal_time(self, values):
         return values.str.split(':').apply(
@@ -156,7 +163,7 @@ class Physionet2012DataReader(Sequence):
 class Physionet2012(MedicalTsDatasetBuilder):
     """Dataset of the PhysioNet/Computing in Cardiology Challenge 2012."""
 
-    VERSION = tfds.core.Version('1.0.1')
+    VERSION = tfds.core.Version('1.0.2')
     has_demographics = True
     has_vitals = True
     has_lab_measurements = False

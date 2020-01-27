@@ -128,8 +128,9 @@ class MedicalTsDatasetBuilder(tfds.core.GeneratorBasedBuilder):
                 [instance[mod_type] for mod_type in collect_ts], axis=-1)
 
             if self.add_measurements_and_lengths:
-                measurements = tf.cast(
-                    tf.math.is_finite(time_series), tf.float32)
+                measurements = tf.math.is_finite(time_series)
+                time_series = tf.where(
+                    measurements, time_series, tf.zeros_like(time_series))
                 length = tf.shape(time)[0]
                 return {
                     'combined': (
