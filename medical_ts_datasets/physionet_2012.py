@@ -88,7 +88,7 @@ class Physionet2012DataReader(Sequence):
         time = timeseries['Time']
         values = timeseries[self.ts_features]
 
-        return {
+        return record_id, {
             'demographics': statics,
             'time': time,
             'vitals': values,
@@ -202,39 +202,36 @@ class Physionet2012(MedicalTsDatasetBuilder):
     def _split_generators(self, dl_manager: tfds.download.DownloadManager):
         """Return SplitGenerators."""
         paths = dl_manager.download_and_extract({
-            'train-1-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz',  # noqa: E501
+            'set-a': 'http://physionet.org/files/challenge-2012/1.0.0/set-a.tar.gz',  # noqa: E501
             # 'train-1-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-a.txt?download',  # noqa: E501
-            'train-2-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz',  # noqa: E501
+            'set-b': 'http://physionet.org/files/challenge-2012/1.0.0/set-b.tar.gz',  # noqa: E501
             # 'train-2-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-b.txt?download',  # noqa: E501
-            'test-data': 'http://physionet.org/files/challenge-2012/1.0.0/set-c.tar.gz',  # noqa: E501
+            'set-c': 'http://physionet.org/files/challenge-2012/1.0.0/set-c.tar.gz',  # noqa: E501
             # 'test-outcome': 'http://physionet.org/files/challenge-2012/1.0.0/Outcomes-c.txt?download',  # noqa: E501
         })
-        train_1_path = os.path.join(paths['train-1-data'], 'set-a')
-        train_2_path = os.path.join(paths['train-2-data'], 'set-b')
-        test_path = os.path.join(paths['test-data'], 'set-c')
+        a_path = os.path.join(paths['set-a'], 'set-a')
+        b_path = os.path.join(paths['set-b'], 'set-b')
+        c_path = os.path.join(paths['set-c'], 'set-c')
 
         return [
             tfds.core.SplitGenerator(
                 name=tfds.Split.TRAIN,
-                num_shards=64,
                 gen_kwargs={
-                    'data_dirs': [train_1_path, train_2_path],
+                    'data_dirs': [a_path, b_path, c_path],
                     'outcome_file': os.path.join(RESOURCES, 'train_listfile.csv')
                 },
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.VALIDATION,
-                num_shards=16,
                 gen_kwargs={
-                    'data_dirs': [train_1_path, train_2_path],
+                    'data_dirs': [a_path, b_path, c_path],
                     'outcome_file': os.path.join(RESOURCES, 'val_listfile.csv')
                 },
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.TEST,
-                num_shards=40,
                 gen_kwargs={
-                    'data_dirs': [test_path],
+                    'data_dirs': [a_path, b_path, c_path],
                     'outcome_file': os.path.join(RESOURCES, 'test_listfile.csv')
                 }
             )
@@ -242,8 +239,6 @@ class Physionet2012(MedicalTsDatasetBuilder):
 
     def _generate_examples(self, data_dirs, outcome_file):
         """Yield examples."""
-        index = 0
         reader = Physionet2012DataReader(data_dirs, outcome_file)
         for instance in reader:
-            yield index, instance
-            index += 1
+            yield instance
