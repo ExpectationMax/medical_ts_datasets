@@ -96,8 +96,10 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
 class MedicalTsDatasetBuilder(tfds.core.GeneratorBasedBuilder):
     """Builder class for medical time series datasets."""
 
-    def __init__(self, output_raw=False, **kwargs):
+    def __init__(self, output_raw=False, add_measurements_and_lengths=True,
+                 **kwargs):
         self.output_raw = output_raw
+        self.add_measurements_and_lengths = add_measurements_and_lengths
         super().__init__(**kwargs)
 
     def _as_dataset(self, **kwargs):
@@ -125,10 +127,25 @@ class MedicalTsDatasetBuilder(tfds.core.GeneratorBasedBuilder):
             time_series = tf.concat(
                 [instance[mod_type] for mod_type in collect_ts], axis=-1)
 
-            return {
-                'combined': (demographics, time, time_series),
-                'target': instance['targets'][self.default_target]
-            }
+            if self.add_measurements_and_lengths:
+                measurements = tf.cast(
+                    tf.math.is_finite(time_series), tf.float32)
+                length = tf.shape(time)[0]
+                return {
+                    'combined': (
+                        demographics,
+                        time,
+                        time_series,
+                        measurements,
+                        length
+                    ),
+                    'target': instance['targets'][self.default_target]
+                }
+            else:
+                return {
+                    'combined': (demographics, time, time_series),
+                    'target': instance['targets'][self.default_target]
+                }
 
         return dataset.map(
             preprocess_output,
