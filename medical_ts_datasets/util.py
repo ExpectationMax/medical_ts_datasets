@@ -1,6 +1,4 @@
 """Utility functions and classes used by medical ts datasets."""
-import logging
-
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from tensorflow_datasets.core.features import FeaturesDict, Tensor

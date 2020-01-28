@@ -144,7 +144,7 @@ class MIMICPhenotypingReader(MIMICReader):
 class Mimic3Phenotyping(MedicalTsDatasetBuilder):
     """Phenotyping task dataset of the MIMIC-III benchmarks."""
 
-    VERSION = tfds.core.Version('1.0.0')
+    VERSION = tfds.core.Version('1.0.1')
     MANUAL_DOWNLOAD_INSTRUCTIONS = """\
     manual_dir should contain the file `mimic_benchmarking_phenotyping.tar.gz`\
     """
@@ -159,10 +159,6 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
     def _info(self):
         return MedicalTsDatasetInfo(
             builder=self,
-            has_demographics=True,
-            has_vitals=True,
-            has_lab_measurements=True,
-            has_interventions=True,
             targets={
                 'Phenotype':
                     tfds.features.Tensor(

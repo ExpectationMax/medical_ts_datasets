@@ -6,10 +6,11 @@ import pandas as pd
 class MIMICReader:
     """Reader base class for MIMIC-III benchmarks."""
 
-    demographics = ['Height', 'Weight']
+    demographics = ['Height']
     vitals = [
-        'Heart Rate', 'Mean blood pressure', 'Diastolic blood pressure',
-        'Systolic blood pressure', 'Oxygen saturation', 'Respiratory rate'
+        'Weight', 'Heart Rate', 'Mean blood pressure',
+        'Diastolic blood pressure', 'Systolic blood pressure',
+        'Oxygen saturation', 'Respiratory rate'
     ]
     lab_measurements = [
         'Capillary refill rate', 'Glucose', 'pH', 'Temperature']
@@ -80,7 +81,15 @@ class MIMICReader:
         with tf.io.gfile.GFile(filename, 'r') as f:
             data = pd.read_csv(f, header=0, sep=',')
         time = data['Hours']
-        demographics = data[self.demographics].mean()
+        # Sometimes the demographics might be NaN.
+        # Thus we might need to replace those with a placeholder number (in our
+        # case -1)
+        demographics = (
+            data[self.demographics]
+            .replace({-1: float('NaN')})
+            .mean()
+        )
+        demographics = demographics.fillna(value=-1)
         vitals = data[self.vitals]
         lab_measurements = data[self.lab_measurements]
         interventions = data[self.interventions]
