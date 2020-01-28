@@ -125,7 +125,7 @@ class MIMICPhenotypingReader(MIMICReader):
             self._read_data_for_instance(data_file)
         patient_id = int(instance['stay'].split('_')[0])
 
-        return {
+        return instance['stay'], {
             'demographics': demographics,
             'time': time,
             'vitals': vitals,
@@ -197,7 +197,6 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
         return [
             tfds.core.SplitGenerator(
                 name=tfds.Split.TRAIN,
-                num_shards=290,
                 gen_kwargs={
                     'data_dir': train_dir,
                     'listfile': train_listfile
@@ -205,7 +204,6 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.VALIDATION,
-                num_shards=630,
                 gen_kwargs={
                     'data_dir': val_dir,
                     'listfile': val_listfile
@@ -213,7 +211,6 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.TEST,
-                num_shards=620,
                 gen_kwargs={
                     'data_dir': test_dir,
                     'listfile': test_listfile
@@ -223,8 +220,6 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
 
     def _generate_examples(self, data_dir, listfile):
         """Yield examples."""
-        index = 0
         reader = MIMICPhenotypingReader(data_dir, listfile)
-        for instance in reader:
-            yield index, instance
-            index += 1
+        for patient_id, instance in reader:
+            yield patient_id, instance

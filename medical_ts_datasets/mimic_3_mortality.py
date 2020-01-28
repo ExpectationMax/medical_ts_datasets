@@ -82,7 +82,7 @@ class MIMICMortalityReader(MIMICReader):
             self._read_data_for_instance(data_file)
         patient_id = int(instance['stay'].split('_')[0])
 
-        return {
+        return instance['stay'], {
             'demographics': demographics,
             'time': time,
             'vitals': vitals,
@@ -147,7 +147,6 @@ class Mimic3Mortality(MedicalTsDatasetBuilder):
         return [
             tfds.core.SplitGenerator(
                 name=tfds.Split.TRAIN,
-                num_shards=146,
                 gen_kwargs={
                     'data_dir': train_dir,
                     'listfile': train_listfile
@@ -155,7 +154,6 @@ class Mimic3Mortality(MedicalTsDatasetBuilder):
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.VALIDATION,
-                num_shards=32,
                 gen_kwargs={
                     'data_dir': val_dir,
                     'listfile': val_listfile
@@ -163,7 +161,6 @@ class Mimic3Mortality(MedicalTsDatasetBuilder):
             ),
             tfds.core.SplitGenerator(
                 name=tfds.Split.TEST,
-                num_shards=32,
                 gen_kwargs={
                     'data_dir': test_dir,
                     'listfile': test_listfile
@@ -173,8 +170,6 @@ class Mimic3Mortality(MedicalTsDatasetBuilder):
 
     def _generate_examples(self, data_dir, listfile):
         """Yield examples."""
-        index = 0
         reader = MIMICMortalityReader(data_dir, listfile)
-        for instance in reader:
-            yield index, instance
-            index += 1
+        for patient_id, instance in reader:
+            yield patient_id, instance
