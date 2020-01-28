@@ -17,9 +17,8 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
     patient_id_dtype = tf.uint32
 
     @tfds.core.api_utils.disallow_positional_args
-    def __init__(self, builder, has_demographics, has_vitals,
-                 has_lab_measurements, has_interventions, targets,
-                 default_target, demographics_names=None, vitals_names=None,
+    def __init__(self, builder, targets, default_target,
+                 demographics_names=None, vitals_names=None,
                  lab_measurements_names=None, interventions_names=None,
                  description=None, homepage=None, citation=None):
         """Dataset info for medical time series datasets.
@@ -29,10 +28,6 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
 
         Args:
             builder: Builder class associated with this dataset info.
-            has_demographics: The dataset has information on demographics.
-            has_vitals: The dataset has vital measurements.
-            has_lab_measurements: The dataset has lab measurements.
-            has_interventions: The dataset has information on interventions.
             targets: Dictionary of endpoints.
             demographics_names: Names of the demographics.
             vitals_names: Names of the vital measurements.
@@ -43,36 +38,49 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
             citation: Citation of dataset.
 
         """
-        self.has_demographics = has_demographics
-        self.has_vitals = has_vitals
-        self.has_lab_measurements = has_lab_measurements
-        self.has_intervensions = has_interventions
+        self.has_demographics = demographics_names is not None
+        self.has_vitals = vitals_names is not None
+        self.has_lab_measurements = lab_measurements_names is not None
+        self.has_interventions = interventions_names is not None
         self.default_target = default_target
 
         metadata = tfds.core.MetadataDict()
         features_dict = {
             'time': Tensor(shape=(None,), dtype=self.time_dtype)
         }
-        if has_demographics:
+        demo_is_categorical = []
+        combined_is_categorical = []
+        if self.has_demographics:
             metadata['demographics_names'] = demographics_names
+            demo_is_categorical.extend(
+                ['=' in demo_name for demo_name in demographics_names])
             features_dict['demographics'] = Tensor(
                 shape=(len(demographics_names),),
                 dtype=self.demographics_dtype)
-        if has_vitals:
+        if self.has_vitals:
             metadata['vitals_names'] = vitals_names
+            combined_is_categorical.extend(
+                ['=' in name for name in vitals_names])
             features_dict['vitals'] = Tensor(
                 shape=(None, len(vitals_names),),
                 dtype=self.vitals_dtype)
-        if has_lab_measurements:
+        if self.has_lab_measurements:
             metadata['lab_measurements_names'] = lab_measurements_names
+            combined_is_categorical.extend(
+                ['=' in name for name in lab_measurements_names])
             features_dict['lab_measurements'] = Tensor(
                 shape=(None, len(lab_measurements_names),),
                 dtype=self.lab_measurements_dtype)
-        if has_interventions:
+        if self.has_interventions:
             metadata['interventions_names'] = interventions_names
+            combined_is_categorical.extend(
+                ['=' in name for name in interventions_names])
             features_dict['interventions'] = Tensor(
                 shape=(None, len(interventions_names),),
                 dtype=self.interventions_dtype)
+
+        metadata['demographics_categorical_indicator'] = demo_is_categorical
+        metadata['combined_categorical_indicator'] = combined_is_categorical
 
         features_dict['targets'] = targets
         features_dict['metadata'] = {'patient_id': self.patient_id_dtype}

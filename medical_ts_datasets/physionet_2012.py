@@ -8,6 +8,7 @@ import os
 from collections.abc import Sequence
 import logging
 
+import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -39,16 +40,25 @@ class Physionet2012DataReader(Sequence):
     """Reader class for physionet 2012 dataset."""
 
     static_features = [
-        'Age', 'Gender', 'Height', 'ICUType', 'Weight'
+        'Age', 'Gender', 'Height', 'ICUType'
     ]
     ts_features = [
-        'ALP', 'ALT', 'AST', 'Albumin', 'BUN', 'Bilirubin',
+        'Weight', 'ALP', 'ALT', 'AST', 'Albumin', 'BUN', 'Bilirubin',
         'Cholesterol', 'Creatinine', 'DiasABP', 'FiO2', 'GCS', 'Glucose',
         'HCO3', 'HCT', 'HR', 'K', 'Lactate', 'MAP', 'MechVent', 'Mg',
         'NIDiasABP', 'NIMAP', 'NISysABP', 'Na', 'PaCO2', 'PaO2', 'Platelets',
         'RespRate', 'SaO2', 'SysABP', 'Temp', 'TroponinI', 'TroponinT',
         'Urine', 'WBC', 'pH'
     ]
+    categorical_demographics = {
+        'Gender': [0, 1],
+        'ICUType': [1, 2, 3, 4]
+    }
+    expanded_static_features = [
+        'Age', 'Gender=0', 'Gender=1', 'Height', 'ICUType=1', 'ICUType=2',
+        'ICUType=3', 'ICUType=4'
+    ]
+
     # Remove instances without any timeseries
     blacklist = [
         140501, 150649, 140936, 143656, 141264, 145611, 142998, 147514, 142731,
@@ -137,6 +147,27 @@ class Physionet2012DataReader(Sequence):
         # Drop RecordID
         statics = statics[self.static_features]
 
+        # Do one hot encoding for categorical features
+        for demo, values in self.categorical_demographics.items():
+            cur_demo = statics[demo]
+            # Transform categorical values into zero based index
+            to_replace = {val: values.index(val) for val in values}
+            # Ensure we dont have unexpected values
+            if cur_demo in to_replace.keys():
+                indicators = to_replace[cur_demo] #.replace(to_replace).values
+                one_hot_encoded = np.eye(len(values))[indicators]
+            else:
+                # We have a few cases where the categorical variables are not
+                # available. Then we should just return zeros for all
+                # categories.
+                one_hot_encoded = np.zeros(len(to_replace.values()))
+            statics.drop(columns=demo, inplace=True)
+            columns = [f'{demo}={val}' for val in values]
+            statics = pd.concat([statics, pd.Series(one_hot_encoded, index=columns)])
+
+        # Ensure same order
+        statics = statics[self.expanded_static_features]
+
         # Sometimes the same value is observered twice for the same time,
         # potentially using different devices. In this case take the mean of
         # the observed values.
@@ -163,7 +194,7 @@ class Physionet2012DataReader(Sequence):
 class Physionet2012(MedicalTsDatasetBuilder):
     """Dataset of the PhysioNet/Computing in Cardiology Challenge 2012."""
 
-    VERSION = tfds.core.Version('1.0.2')
+    VERSION = tfds.core.Version('1.0.10')
     has_demographics = True
     has_vitals = True
     has_lab_measurements = False
@@ -173,12 +204,6 @@ class Physionet2012(MedicalTsDatasetBuilder):
     def _info(self):
         return MedicalTsDatasetInfo(
             builder=self,
-            has_demographics=True,
-            has_vitals=True,
-            # TODO: Currently we treat all measurements as vitals. Should split
-            # this.
-            has_lab_measurements=False,
-            has_interventions=False,
             targets={
                 'In-hospital_death':
                     tfds.features.ClassLabel(num_classes=2),
@@ -192,7 +217,9 @@ class Physionet2012(MedicalTsDatasetBuilder):
                     tfds.features.Tensor(shape=tuple(), dtype=tf.float32)
             },
             default_target='In-hospital_death',
-            demographics_names=Physionet2012DataReader.static_features,
+            # TODO: Currently we treat all measurements as vitals. Should split
+            # this.
+            demographics_names=Physionet2012DataReader.expanded_static_features,
             vitals_names=Physionet2012DataReader.ts_features,
             description=_DESCRIPTION,
             homepage='https://physionet.org/content/challenge-2012/1.0.0/',
