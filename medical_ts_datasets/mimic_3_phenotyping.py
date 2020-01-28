@@ -133,7 +133,7 @@ class MIMICPhenotypingReader(MIMICReader):
             'interventions': intervensions,
             'targets': {
                 'Length_of_stay': length_of_stay,
-                'Phenotype': phenotype.astype(np.uint32)
+                'Phenotype': phenotype.astype(np.int32)
             },
             'metadata': {
                 'patient_id': patient_id
@@ -144,7 +144,7 @@ class MIMICPhenotypingReader(MIMICReader):
 class Mimic3Phenotyping(MedicalTsDatasetBuilder):
     """Phenotyping task dataset of the MIMIC-III benchmarks."""
 
-    VERSION = tfds.core.Version('1.0.1')
+    VERSION = tfds.core.Version('1.0.2')
     MANUAL_DOWNLOAD_INSTRUCTIONS = """\
     manual_dir should contain the file `mimic_benchmarking_phenotyping.tar.gz`\
     """
@@ -163,7 +163,7 @@ class Mimic3Phenotyping(MedicalTsDatasetBuilder):
                 'Phenotype':
                     tfds.features.Tensor(
                         shape=(len(MIMICPhenotypingReader.phenotypes),),
-                        dtype=tf.uint32
+                        dtype=tf.int32
                     ),
                 'Length_of_stay':
                     tfds.features.Tensor(shape=tuple(), dtype=tf.float32)
