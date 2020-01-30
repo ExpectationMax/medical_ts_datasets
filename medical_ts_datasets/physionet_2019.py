@@ -14,6 +14,9 @@ import tensorflow_datasets as tfds
 
 from .util import MedicalTsDatasetBuilder, MedicalTsDatasetInfo
 
+RESOURCES = os.path.join(
+    os.path.dirname(__file__), 'resources', 'physionet2019')
+
 _CITATION = """
 @article{reyna2019early,
   title={Early prediction of sepsis from clinical data:
@@ -33,7 +36,7 @@ The PhysioNet Computing in Cardiology Challenge 2019.
 class Physionet2019DataReader(Sequence):
     """Reader class for physionet 2019 dataset."""
 
-    static_features = ['Age', 'Gender', 'Unit1', 'Unit2', 'HospAdmTime']
+    static_features = ['Age', 'Gender', 'HospAdmTime']
     vital_features = [
         'HR', 'O2Sat', 'Temp', 'SBP', 'MAP', 'DBP', 'Resp', 'EtCO2']
     lab_features = [
@@ -44,36 +47,74 @@ class Physionet2019DataReader(Sequence):
         'WBC', 'Fibrinogen', 'Platelets'
     ]
     ts_features = vital_features + lab_features
+    categorical_demographics = {
+        'Gender': [0, 1],
+    }
+    expanded_static_features = [
+        'Age', 'Gender=0', 'Gender=1', 'HospAdmTime'
+    ]
 
-    def __init__(self, data_path):
+    def __init__(self, data_paths, listfile):
         """Load instances of PhysioNet 2019 challenge from data_path."""
-        self.data_path = data_path
+        self.data_paths = data_paths
 
         # Ensure same order of instances
-        self.samples = sorted(tf.io.gfile.listdir(data_path))
+        with tf.io.gfile.GFile(listfile, 'r') as f:
+            self.samples = pd.read_csv(f, header=0, sep=',')
+        # self.samples = sorted(tf.io.gfile.listdir(data_path))
         self.label_dtype = np.float32
         self.data_dtype = np.float32
 
     def __getitem__(self, index):
         """Get instance at position index."""
-        sample_name = self.samples[index]
-        filename = os.path.join(self.data_path, sample_name)
+        sample_name = self.samples.iloc[index].at['filename']
+        filename = None
+        for path in self.data_paths:
+            suggested_filename = os.path.join(path, sample_name)
+            if tf.io.gfile.exists(suggested_filename):
+                filename = suggested_filename
+                break
+        if filename is None:
+            raise ValueError(f'Unable to find data for record: {sample_name}.')
+
         with tf.io.gfile.GFile(filename, 'r') as f:
             data = pd.read_csv(f, sep='|', header=0)
 
         record_id = int(sample_name[1:].split('.')[0])
         time = data['ICULOS']
         sepsis_label = data['SepsisLabel']
-        statics = data[self.static_features].iloc[0].values
+        statics = data[self.static_features].iloc[0]
+
+        # Do one hot encoding for categorical features
+        for demo, values in self.categorical_demographics.items():
+            cur_demo = statics[demo]
+            # Transform categorical values into zero based index
+            to_replace = {val: values.index(val) for val in values}
+            # Ensure we dont have unexpected values
+            if cur_demo in to_replace.keys():
+                indicators = to_replace[cur_demo]
+                one_hot_encoded = np.eye(len(values))[indicators]
+            else:
+                # We have a few cases where the categorical variables are not
+                # available. Then we should just return zeros for all
+                # categories.
+                one_hot_encoded = np.zeros(len(to_replace.values()))
+            statics.drop(columns=demo, inplace=True)
+            columns = [f'{demo}={val}' for val in values]
+            statics = pd.concat([statics, pd.Series(one_hot_encoded, index=columns)])
+
+        # Ensure same order
+        statics = statics[self.expanded_static_features]
+
         vitals = data[self.vital_features]
         labs = data[self.lab_features]
 
-        return {
-            'demographics': statics.astype(self.data_dtype),
-            'time': time.astype(self.data_dtype),
-            'vitals': vitals.astype(self.data_dtype),
-            'lab_measurements': labs.astype(self.data_dtype),
-            'targets': {'Sepsis': sepsis_label.astype(self.data_dtype)},
+        return sample_name, {
+            'demographics': statics.values.astype(self.data_dtype),
+            'time': time.values.astype(self.data_dtype),
+            'vitals': vitals.values.astype(self.data_dtype),
+            'lab_measurements': labs.values.astype(self.data_dtype),
+            'targets': {'Sepsis': sepsis_label.values.astype(self.data_dtype)},
             'metadata': {
                 'patient_id': record_id
             }
@@ -89,19 +130,21 @@ class Physionet2019(MedicalTsDatasetBuilder):
 
     VERSION = tfds.core.Version('1.0.0')
 
+    has_demographics = True
+    has_vitals = True
+    has_lab_measurements = True
+    has_interventions = False
+    default_target = 'Sepsis'
+
     def _info(self):
         return MedicalTsDatasetInfo(
             builder=self,
-            has_demographics=True,
-            has_vitals=True,
-            has_lab_measurements=True,
-            has_interventions=False,
             targets={
                 'Sepsis': tfds.features.Tensor(
                     shape=(None,), dtype=tf.float32)
             },
             default_target='Sepsis',
-            demographics_names=Physionet2019DataReader.static_features,
+            demographics_names=Physionet2019DataReader.expanded_static_features,
             vitals_names=Physionet2019DataReader.vital_features,
             lab_measurements_names=Physionet2019DataReader.lab_features,
             description=_DESCRIPTION,
@@ -122,16 +165,28 @@ class Physionet2019(MedicalTsDatasetBuilder):
             tfds.core.SplitGenerator(
                 name=tfds.Split.TRAIN,
                 gen_kwargs={
-                    'data_dirs': [train_1_path, train_2_path]
+                    'data_paths': [train_1_path, train_2_path],
+                    'listfile': os.path.join(RESOURCES, 'train_listfile.csv')
+                }
+            ),
+            tfds.core.SplitGenerator(
+                name=tfds.Split.VALIDATION,
+                gen_kwargs={
+                    'data_paths': [train_1_path, train_2_path],
+                    'listfile': os.path.join(RESOURCES, 'val_listfile.csv')
+                }
+            ),
+            tfds.core.SplitGenerator(
+                name=tfds.Split.TEST,
+                gen_kwargs={
+                    'data_paths': [train_1_path, train_2_path],
+                    'listfile': os.path.join(RESOURCES, 'test_listfile.csv')
                 }
             )
         ]
 
-    def _generate_examples(self, data_dirs):
+    def _generate_examples(self, data_paths, listfile):
         """Yield example."""
-        index = 0
-        for data_dir in data_dirs:
-            reader = Physionet2019DataReader(data_dir)
-            for instance in reader:
-                yield index, instance
-                index += 1
+        reader = Physionet2019DataReader(data_paths, listfile)
+        for sample_id, instance in reader:
+            yield sample_id, instance
