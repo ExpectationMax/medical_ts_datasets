@@ -114,7 +114,10 @@ class Physionet2019DataReader(Sequence):
             'time': time.values.astype(self.data_dtype),
             'vitals': vitals.values.astype(self.data_dtype),
             'lab_measurements': labs.values.astype(self.data_dtype),
-            'targets': {'Sepsis': sepsis_label.values.astype(self.data_dtype)},
+            'targets': {
+                'Sepsis':
+                    sepsis_label.values.astype(np.int32)[:, np.newaxis]
+            },
             'metadata': {
                 'patient_id': record_id
             }
@@ -128,7 +131,7 @@ class Physionet2019DataReader(Sequence):
 class Physionet2019(MedicalTsDatasetBuilder):
     """Dataset of the PhysioNet/Computing in Cardiology Challenge 2019."""
 
-    VERSION = tfds.core.Version('1.0.0')
+    VERSION = tfds.core.Version('1.0.1')
 
     has_demographics = True
     has_vitals = True
@@ -141,7 +144,7 @@ class Physionet2019(MedicalTsDatasetBuilder):
             builder=self,
             targets={
                 'Sepsis': tfds.features.Tensor(
-                    shape=(None,), dtype=tf.float32)
+                    shape=(None, 1), dtype=tf.int32)
             },
             default_target='Sepsis',
             demographics_names=Physionet2019DataReader.expanded_static_features,
