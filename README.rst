@@ -7,7 +7,9 @@ following the tensorflow dataset API.
 
 Currently implemented datasets are:
 
-- ``physionet2012``
+- ``physionet2012`` (mortality prediction)
+- ``mimic3_mortality`` (mortality prediction)
+- ``physionet2019`` (online sepsis early prediction)
 
 
 Example usage
@@ -40,3 +42,12 @@ structure:
   dataset specific.
 - ``metadata``: Directory of metadata on an individual patient, such as the
   identifier using in the dataset.
+
+Supervised dataset
+------------------
+
+If the load method is called with the flag ``as_supervised=True``, it will
+return a dataset which can readily be used together with keras. Here each
+instance is represented by a (X, y) tuple and the X tuple contains the
+following 4 elements: ``time``, ``values``, ``measurements`` (indicators if
+a value was measured or not) and ``length``.
