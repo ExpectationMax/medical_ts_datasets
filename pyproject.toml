@@ -5,12 +5,12 @@ description = ""
 authors = ["Max Horn <max.horn@bsse.ethz.ch>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = ">=3.6.1,<4"
 pip = ">=19.0.0"
 setuptools = ">=41.0.0"
 tensorflow-datasets = ">=2.0.0"
 tensorflow = ">=1.15.2"
-pandas = "^0.25.3"
+pandas = "*"
 
 [tool.poetry.dev-dependencies]
 pytest = "^3.0"
