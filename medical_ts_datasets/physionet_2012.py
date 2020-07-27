@@ -183,7 +183,7 @@ class Physionet2012DataReader(Sequence):
         time_series = data.pivot(
             index='Time', columns='Parameter', values='Value')
         time_series = time_series\
-            .reindex(columns=self.ts_features).reset_index()
+            .reindex(columns=self.ts_features).dropna(how='all').reset_index()
         return statics, time_series
 
     def __len__(self):
