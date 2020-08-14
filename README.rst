@@ -52,3 +52,25 @@ return a dataset which can readily be used together with keras. Here each
 instance is represented by a (X, y) tuple and the X tuple contains the
 following 4 elements: ``time``, ``values``, ``measurements`` (indicators if
 a value was measured or not) and ``length``.
+
+Citing
+------
+
+When using datasets from this repository, please do not forget to cite the following references besides a reference to the original dataset:
+
+.. code-block:: bibtex
+
+    @InProceedings{horn2020set,
+        title = {{S}et {F}unctions for {T}ime {S}eries},
+        author = {Max Horn and Michael Moor and Christian Bock and Bastian Rieck and Karsten Borgwardt},
+        booktitle = {Proceedings of the 37th International Conference on Machine Learning},
+        year = {2020},
+        volume = {119},
+        series = {Proceedings of Machine Learning Research},
+        publisher = {PMLR}
+    }
+
+    @misc{TFDS,
+      title = {{TensorFlow Datasets}, A collection of ready-to-use datasets},
+      howpublished = {\url{https://www.tensorflow.org/datasets}},
+    }
