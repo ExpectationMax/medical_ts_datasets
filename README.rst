@@ -9,6 +9,7 @@ Currently implemented datasets are:
 
 - ``physionet2012`` (mortality prediction)
 - ``mimic3_mortality`` (mortality prediction)
+- ``mimic3_phenotyping`` (mortality prediction)
 - ``physionet2019`` (online sepsis early prediction)
 
 
