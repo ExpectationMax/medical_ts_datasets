@@ -1,6 +1,5 @@
 """Split physionet2019 dataset into train validation and test."""
 import argparse
-from glob import glob
 import os
 
 import pandas as pd
@@ -50,11 +49,20 @@ def main():
 
     train_data, test_data, = train_test_split(
         data, stratify=data['SepsisLabel'], test_size=0.2)
+
+    # Exclude buggy instance `p013777.psv` where hospital admission time is
+    # missing.  Exclude buggy instances `p108796.psv` and `p115810.psv` without
+    # any time series measurements. Excluded here instead of before split in
+    # order to avoid major changes to the splitting.
+    valid_test = ~test_data['filename'].isin(['p013777.psv', 'p108796.psv'])
+    test_data = test_data[valid_test]
     test_data.to_csv(
         os.path.join(args.output, 'test_listfile.csv'), index=False)
 
     train_data, val_data = train_test_split(
         train_data, stratify=train_data['SepsisLabel'], test_size=0.2)
+    valid_train = ~train_data['filename'].isin(['p115810.psv'])
+    train_data = train_data[valid_train]
 
     train_data.to_csv(
         os.path.join(args.output, 'train_listfile.csv'), index=False)

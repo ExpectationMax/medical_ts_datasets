@@ -131,7 +131,7 @@ class Physionet2019DataReader(Sequence):
 class Physionet2019(MedicalTsDatasetBuilder):
     """Dataset of the PhysioNet/Computing in Cardiology Challenge 2019."""
 
-    VERSION = tfds.core.Version('1.0.1')
+    VERSION = tfds.core.Version('1.0.3')
 
     has_demographics = True
     has_vitals = True
