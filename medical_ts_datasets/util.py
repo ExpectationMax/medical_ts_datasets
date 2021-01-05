@@ -14,7 +14,6 @@ class MedicalTsDatasetInfo(tfds.core.DatasetInfo):
     interventions_dtype = tf.float32
     patient_id_dtype = tf.uint32
 
-    @tfds.core.api_utils.disallow_positional_args
     def __init__(self, builder, targets, default_target,
                  demographics_names=None, vitals_names=None,
                  lab_measurements_names=None, interventions_names=None,
